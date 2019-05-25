@@ -24,6 +24,7 @@ WORKDIR /
 
 COPY --from=builder /root/rtl_433_prometheus /
 COPY cmd.sh /cmd.sh
+RUN chmod +x /cmd.sh
 EXPOSE 9001
-ENTRYPOINT ["bash", "/cmd.sh"]
+ENTRYPOINT ["/cmd.sh"]
 
