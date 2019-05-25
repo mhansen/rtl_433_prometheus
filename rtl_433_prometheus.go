@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -109,7 +108,7 @@ func main() {
 
 		labels := []string{msg.Model, strconv.Itoa(msg.ID), strconv.Itoa(msg.Channel)}
 		packetsReceived.WithLabelValues(labels...).Inc()
-		timestamp.WithLabelValues(msg.Model, strconv.Itoa(msg.ID), strconv.Itoa(msg.Channel)).Set(float64(time.Now().Unix()))
+		timestamp.WithLabelValues(labels...).SetToCurrentTime()
 		if temperature != nil {
 			temperature.WithLabelValues(labels...).Set(*msg.Temperature)
 		}
