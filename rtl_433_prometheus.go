@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"flag"
 	"html/template"
+	"log"
 	"net/http"
-	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -20,7 +21,8 @@ var (
 	 <h1>RTL_433 Prometheus Exporter</h1>
 	 <a href="/metrics">Metrics</a>`))
 
-	addr = flag.String("listen", ":9001", "Address to listen on")
+	addr       = flag.String("listen", ":9001", "Address to listen on")
+	subprocess = flag.String("subprocess", "rtl_433 -F json", "What command to run to get rtl_433 radio packets")
 
 	labels = []string{"model", "id", "channel"}
 
@@ -95,15 +97,23 @@ func main() {
 		})
 		http.Handle("/metrics", prometheus.Handler())
 		if err := http.ListenAndServe(*addr, nil); err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}()
 
-	scanner := bufio.NewScanner(os.Stdin)
+	cmd := exec.Command("/bin/bash", "-c", *subprocess)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		msg := Message{}
 		if err := json.Unmarshal(scanner.Bytes(), &msg); err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 
 		labels := []string{msg.Model, strconv.Itoa(msg.ID), strconv.Itoa(msg.Channel)}
@@ -122,8 +132,10 @@ func main() {
 			battery.WithLabelValues(labels...).Set(0)
 		}
 	}
-
 	if err := scanner.Err(); err != nil {
-		panic(err)
+		log.Fatal(err)
+	}
+	if err := cmd.Wait(); err != nil {
+		log.Fatal(err)
 	}
 }

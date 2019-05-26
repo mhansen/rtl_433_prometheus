@@ -23,8 +23,6 @@ RUN git clone https://github.com/mhansen/rtl_433.git && \
 WORKDIR /
 
 COPY --from=builder /root/rtl_433_prometheus /
-COPY cmd.sh /cmd.sh
-RUN chmod +x /cmd.sh
 EXPOSE 9001
-ENTRYPOINT ["/cmd.sh"]
+ENTRYPOINT ["/rtl_433_prometheus", "--subprocess", "rtl_433 -F json -R 19 -R 127"]
 
