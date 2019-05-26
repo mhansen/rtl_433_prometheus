@@ -135,10 +135,11 @@ func main() {
 			battery.WithLabelValues(labels...).Set(0)
 		}
 	}
-	if err := scanner.Err(); err != nil {
+	// Wait first, then check scanner.Err, because Wait's error messages are better.
+	if err := cmd.Wait(); err != nil {
 		log.Fatal(err)
 	}
-	if err := cmd.Wait(); err != nil {
+	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
 }
