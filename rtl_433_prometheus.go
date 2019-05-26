@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -102,6 +103,8 @@ func main() {
 	}()
 
 	cmd := exec.Command("/bin/bash", "-c", *subprocess)
+	// If we don't tell the subprocess stderr to be our stderr, we get no logs on failure.
+	cmd.Stderr = os.Stderr
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
