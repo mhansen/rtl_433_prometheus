@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -73,7 +74,8 @@ type Message struct {
 	// Sensor ID. May be random per-boot, or saved into device memory.
 	ID int `json:"id"`
 	// Channel sensor is transmitting on. Typically 1-3, controlled by a switch on the device
-	Channel int `json:"channel"`
+	// Either an int or string
+	Channel interface{} `json:"channel"`
 	// Battery status, typically "LOW" or "OK", case-insensitive.
 	Battery string `json:"battery"`
 	// Temperature in Celsius. Nil if not present in initial JSON.
@@ -115,11 +117,23 @@ func main() {
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		msg := Message{}
-		if err := json.Unmarshal(scanner.Bytes(), &msg); err != nil {
+		line := scanner.Bytes()
+		if err := json.Unmarshal(line, &msg); err != nil {
 			log.Fatal(err)
 		}
 
-		labels := []string{msg.Model, strconv.Itoa(msg.ID), strconv.Itoa(msg.Channel)}
+		// Some sensors output numbered channels, some output string channels.
+		// We have to handle both.
+		var strChannel string
+		if s, ok := msg.Channel.(string); ok {
+			strChannel = s
+		} else if floatChannel, ok := msg.Channel.(float64); ok {
+			strChannel = fmt.Sprintf("%f", floatChannel)
+		} else {
+			log.Fatalf("Could not parse JSON %v, bad channel (expected float or string): %v", line, msg.Channel)
+		}
+
+		labels := []string{msg.Model, strconv.Itoa(msg.ID), strChannel}
 		packetsReceived.WithLabelValues(labels...).Inc()
 		timestamp.WithLabelValues(labels...).SetToCurrentTime()
 		if temperature != nil {
