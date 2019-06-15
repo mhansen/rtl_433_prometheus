@@ -25,5 +25,5 @@ WORKDIR /
 COPY --from=builder /root/rtl_433_prometheus /
 EXPOSE 9001
 ENTRYPOINT ["/rtl_433_prometheus", "--subprocess"]
-CMD ["rtl_433 -F json"]
+CMD ["rtl_433 -F json -M newmodel"]
 

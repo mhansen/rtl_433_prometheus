@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -76,8 +77,10 @@ type Message struct {
 	// Channel sensor is transmitting on. Typically 1-3, controlled by a switch on the device
 	// Either an int or string
 	RawChannel interface{} `json:"channel"`
-	// Battery status, typically "LOW" or "OK", case-insensitive.
+	// Battery status, typically "LOW" or "OK" or "", case-insensitive.
 	Battery string `json:"battery"`
+	// Alternative battery key. 1 or 0 or nil (not present)
+	BatteryOK *int `json:"battery_ok"`
 	// Temperature in Celsius. Nil if not present in initial JSON.
 	Temperature *float64 `json:"temperature_C"`
 	// Humidity (0-100). Nil if not present in initial JSON.
@@ -97,14 +100,46 @@ func (m *Message) Channel() (string, error) {
 	return "", fmt.Errorf("Could not parse JSON, bad channel (expected float or string), got: %v", m.RawChannel)
 }
 
+func run(r io.Reader) error {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		msg := Message{}
+		line := scanner.Bytes()
+		if err := json.Unmarshal(line, &msg); err != nil {
+			log.Fatal(err)
+		}
+
+		channel, err := msg.Channel()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		labels := []string{msg.Model, strconv.Itoa(msg.ID), channel}
+		packetsReceived.WithLabelValues(labels...).Inc()
+		timestamp.WithLabelValues(labels...).SetToCurrentTime()
+		if temperature != nil {
+			temperature.WithLabelValues(labels...).Set(*msg.Temperature)
+		}
+		if msg.Humidity != nil {
+			humidity.WithLabelValues(labels...).Set(float64(*msg.Humidity) / 100)
+		}
+		if msg.Battery != "" {
+			switch {
+			case strings.EqualFold(msg.Battery, "OK"):
+				battery.WithLabelValues(labels...).Set(1)
+			case strings.EqualFold(msg.Battery, "LOW"):
+				battery.WithLabelValues(labels...).Set(0)
+			}
+		} else if msg.BatteryOK != nil {
+			battery.WithLabelValues(labels...).Set(float64(*msg.BatteryOK))
+		}
+	}
+	return scanner.Err()
+}
+
 func main() {
 	flag.Parse()
-
-	prometheus.MustRegister(packetsReceived)
-	prometheus.MustRegister(temperature)
-	prometheus.MustRegister(humidity)
-	prometheus.MustRegister(timestamp)
-	prometheus.MustRegister(battery)
+	prometheus.MustRegister(packetsReceived, temperature, humidity, timestamp, battery)
 
 	go func() {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -127,42 +162,12 @@ func main() {
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
-		msg := Message{}
-		line := scanner.Bytes()
-		if err := json.Unmarshal(line, &msg); err != nil {
-			log.Fatal(err)
-		}
-
-		// Some sensors output numbered channels, some output string channels.
-		// We have to handle both.
-		channel, err := msg.Channel()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		labels := []string{msg.Model, strconv.Itoa(msg.ID), channel}
-		packetsReceived.WithLabelValues(labels...).Inc()
-		timestamp.WithLabelValues(labels...).SetToCurrentTime()
-		if temperature != nil {
-			temperature.WithLabelValues(labels...).Set(*msg.Temperature)
-		}
-		if msg.Humidity != nil {
-			humidity.WithLabelValues(labels...).Set(float64(*msg.Humidity) / 100)
-		}
-		switch {
-		case strings.EqualFold(msg.Battery, "OK"):
-			battery.WithLabelValues(labels...).Set(1)
-		case strings.EqualFold(msg.Battery, "LOW"):
-			battery.WithLabelValues(labels...).Set(0)
-		}
-	}
+	scannerErr := run(stdout)
 	// Wait first, then check scanner.Err, because Wait's error messages are better.
 	if err := cmd.Wait(); err != nil {
 		log.Fatal(err)
 	}
-	if err := scanner.Err(); err != nil {
+	if scannerErr != nil {
 		log.Fatal(err)
 	}
 }

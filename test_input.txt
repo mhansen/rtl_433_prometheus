@@ -1,0 +1,4 @@
+{"time" : "2019-06-16 07:15:57", "model" : "Acurite-Tower", "id" : 7997, "sensor_id" : 7997, "channel" : "A", "temperature_C" : 12.600, "humidity" : 91, "battery_ok" : 0}
+{"time" : "2019-06-16 07:18:06", "model" : "Nexus-TH", "id" : 184, "channel" : 2, "battery_ok" : 1, "temperature_C" : 21.700, "humidity" : 55}
+{"time" : "2019-06-16 07:18:16", "model" : "Nexus-TH", "id" : 94, "channel" : 1, "battery_ok" : 1, "temperature_C" : 22.600, "humidity" : 53}
+{"time" : "2019-06-16 07:18:51", "model" : "Ecowitt-WH53", "id" : 55, "channel" : 3, "temperature_C" : 18.000}
