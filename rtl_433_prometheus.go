@@ -92,7 +92,7 @@ func (m *Message) Channel() (string, error) {
 		return s, nil
 	}
 	if f, ok := m.RawChannel.(float64); ok {
-		return fmt.Sprintf("%f", f), nil
+		return fmt.Sprintf("%d", int(f)), nil
 	}
 	return "", fmt.Errorf("Could not parse JSON, bad channel (expected float or string), got: %v", m.RawChannel)
 }
