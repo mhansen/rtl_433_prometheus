@@ -75,13 +75,26 @@ type Message struct {
 	ID int `json:"id"`
 	// Channel sensor is transmitting on. Typically 1-3, controlled by a switch on the device
 	// Either an int or string
-	Channel interface{} `json:"channel"`
+	RawChannel interface{} `json:"channel"`
 	// Battery status, typically "LOW" or "OK", case-insensitive.
 	Battery string `json:"battery"`
 	// Temperature in Celsius. Nil if not present in initial JSON.
 	Temperature *float64 `json:"temperature_C"`
 	// Humidity (0-100). Nil if not present in initial JSON.
 	Humidity *int32 `json:"humidity"`
+}
+
+// Channel returns a string representation of the channel
+// Some sensors output numbered channels, some output string channels.
+// We have to handle both.
+func (m *Message) Channel() (string, error) {
+	if s, ok := m.RawChannel.(string); ok {
+		return s, nil
+	}
+	if f, ok := m.RawChannel.(float64); ok {
+		return fmt.Sprintf("%f", f), nil
+	}
+	return "", fmt.Errorf("Could not parse JSON, bad channel (expected float or string), got: %v", m.RawChannel)
 }
 
 func main() {
@@ -124,16 +137,12 @@ func main() {
 
 		// Some sensors output numbered channels, some output string channels.
 		// We have to handle both.
-		var strChannel string
-		if s, ok := msg.Channel.(string); ok {
-			strChannel = s
-		} else if floatChannel, ok := msg.Channel.(float64); ok {
-			strChannel = fmt.Sprintf("%f", floatChannel)
-		} else {
-			log.Fatalf("Could not parse JSON %v, bad channel (expected float or string): %v", line, msg.Channel)
+		channel, err := msg.Channel()
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		labels := []string{msg.Model, strconv.Itoa(msg.ID), strChannel}
+		labels := []string{msg.Model, strconv.Itoa(msg.ID), channel}
 		packetsReceived.WithLabelValues(labels...).Inc()
 		timestamp.WithLabelValues(labels...).SetToCurrentTime()
 		if temperature != nil {
