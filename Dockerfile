@@ -22,12 +22,12 @@ RUN git clone https://github.com/mhansen/rtl_433.git && \
     rm -rf /tmp
 
 FROM debian:latest
-RUN apt-get update && apt-get install -y librtlsdr
+RUN apt-get update && apt-get install -y librtlsdr0
 WORKDIR /
 COPY --from=gobuilder /root/rtl_433_prometheus /
 COPY --from=cbuilder /usr/local/bin/rtl_433 /
 RUN chmod +x /rtl_433
 EXPOSE 9001
-ENTRYPOINT ["/rtl_433_prometheus", "--subprocess"]
-CMD ["/rtl_433 -F json -M newmodel"]
+ENTRYPOINT ["/rtl_433_prometheus"]
+CMD ["--subprocess", "/rtl_433 -F json -M newmodel"]
 
