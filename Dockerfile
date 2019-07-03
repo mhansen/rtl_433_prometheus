@@ -8,7 +8,8 @@ COPY go.mod go.sum *.go /root/
 RUN go get -d -v
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -a rtl_433_prometheus.go
 
-FROM debian:latest as cbuilder
+# I'd like to use arm32v6 for RPi Zero W but that doesn't exist on Docker Hub. v5 is good enough.
+FROM arm32v5/debian:latest as cbuilder
 RUN apt-get update && apt-get install -y git libusb-1.0.0-dev librtlsdr-dev rtl-sdr cmake automake
 WORKDIR /tmp/
 RUN git clone https://github.com/mhansen/rtl_433.git && \
@@ -21,7 +22,8 @@ RUN git clone https://github.com/mhansen/rtl_433.git && \
     cd / && \
     rm -rf /tmp
 
-FROM debian:latest
+# I'd like to use arm32v6 for RPi Zero W but that doesn't exist on Docker Hub. v5 is good enough.
+FROM arm32v5/debian:latest
 RUN apt-get update && apt-get install -y librtlsdr0
 WORKDIR /
 COPY --from=gobuilder /root/rtl_433_prometheus /
