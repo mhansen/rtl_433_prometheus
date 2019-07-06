@@ -22,12 +22,16 @@ var (
 		`<!doctype html>
 	 <title>RTL_433 Prometheus Exporter</title>
 	 <h1>RTL_433 Prometheus Exporter</h1>
-	 <a href="/metrics">Metrics</a>`))
+	 <a href="/metrics">Metrics</a>
+	 <p>
+	 <pre>{{.}}</pre>
+	 `))
 
 	addr       = flag.String("listen", ":9001", "Address to listen on")
 	subprocess = flag.String("subprocess", "rtl_433 -F json", "What command to run to get rtl_433 radio packets")
+	matchers   = make(locationMatchers)
 
-	labels = []string{"model", "id", "channel"}
+	labels = []string{"model", "id", "channel", "location"}
 
 	packetsReceived = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -87,6 +91,30 @@ type Message struct {
 	Humidity *int32 `json:"humidity"`
 }
 
+type locationMatcher struct {
+	Model   string
+	Channel string
+}
+
+type locationMatchers map[locationMatcher]string
+
+func (lms locationMatchers) String() string {
+	out := []string{}
+	for matcher, location := range lms {
+		out = append(out, matcher.Model+","+matcher.Channel+","+location)
+	}
+	return strings.Join(out, ";")
+}
+
+func (lms locationMatchers) Set(v string) error {
+	matchers := strings.Split(v, ";")
+	for _, m := range matchers {
+		f := strings.Split(m, ",")
+		lms[locationMatcher{Model: f[0], Channel: f[1]}] = f[2]
+	}
+	return nil
+}
+
 // Channel returns a string representation of the channel
 // Some sensors output numbered channels, some output string channels.
 // We have to handle both.
@@ -114,7 +142,9 @@ func run(r io.Reader) error {
 			log.Fatal(err)
 		}
 
-		labels := []string{msg.Model, strconv.Itoa(msg.ID), channel}
+		location := matchers[locationMatcher{Model: msg.Model, Channel: channel}]
+
+		labels := []string{msg.Model, strconv.Itoa(msg.ID), channel, location}
 		packetsReceived.WithLabelValues(labels...).Inc()
 		timestamp.WithLabelValues(labels...).SetToCurrentTime()
 		if temperature != nil {
@@ -138,13 +168,15 @@ func run(r io.Reader) error {
 }
 
 func main() {
+	flag.Var(&matchers, "location_matchers", "Acurite Tower Sensor,1,Bedroom;...")
 	flag.Parse()
+	log.Print("Flag config: " + matchers.String())
 	prometheus.MustRegister(packetsReceived, temperature, humidity, timestamp, battery)
 
 	go func() {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			index.Execute(w, "")
+			index.Execute(w, matchers)
 		})
 		http.Handle("/metrics", prometheus.Handler())
 		if err := http.ListenAndServe(*addr, nil); err != nil {
