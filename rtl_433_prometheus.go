@@ -85,6 +85,8 @@ type Message struct {
 	Battery string `json:"battery"`
 	// Alternative battery key. 1 or 0 or nil (not present)
 	BatteryOK *int `json:"battery_ok"`
+	// Yet another alternative battery key. 1 for low battery, 0 for high battery, nil (not present)
+	BatteryLow *int `json:"battery_low"`
 	// Temperature in Celsius. Nil if not present in initial JSON.
 	Temperature *float64 `json:"temperature_C"`
 	// Humidity (0-100). Nil if not present in initial JSON.
@@ -162,6 +164,8 @@ func run(r io.Reader) error {
 			}
 		} else if msg.BatteryOK != nil {
 			battery.WithLabelValues(labels...).Set(float64(*msg.BatteryOK))
+		} else if msg.BatteryLow != nil {
+			battery.WithLabelValues(labels...).Set(float64(1 - *msg.BatteryLow))
 		}
 	}
 	return scanner.Err()
