@@ -108,12 +108,12 @@ func (lms locationMatchers) String() string {
 	return strings.Join(out, ";")
 }
 
-func (lms locationMatchers) Set(v string) error {
-	matchers := strings.Split(v, ";")
-	for _, m := range matchers {
-		f := strings.Split(m, ",")
-		lms[locationMatcher{Model: f[0], Channel: f[1]}] = f[2]
+func (lms locationMatchers) Set(m string) error {
+	f := strings.Split(m, ",")
+	if len(f) != 3 {
+		return fmt.Errorf("want flag with 3 comma-separated fields, got %v", m)
 	}
+	lms[locationMatcher{Model: f[0], Channel: f[1]}] = f[2]
 	return nil
 }
 
