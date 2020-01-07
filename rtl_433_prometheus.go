@@ -26,9 +26,10 @@ var (
 	 <pre>{{.}}</pre>
 	 `))
 
-	addr       = flag.String("listen", ":9001", "Address to listen on")
-	subprocess = flag.String("subprocess", "rtl_433 -F json", "What command to run to get rtl_433 radio packets")
-	matchers   = make(locationMatchers)
+	addr            = flag.String("listen", ":9001", "Address to listen on")
+	subprocess      = flag.String("subprocess", "rtl_433 -F json", "What command to run to get rtl_433 radio packets")
+	channelMatchers = make(locationMatchers)
+	idMatchers      = make(locationMatchers)
 
 	labels = []string{"model", "id", "channel", "location"}
 
@@ -94,8 +95,9 @@ type Message struct {
 }
 
 type locationMatcher struct {
-	Model   string
-	Channel string
+	Model string
+	// May be ID or Channel depending on which flag
+	Matcher string
 }
 
 type locationMatchers map[locationMatcher]string
@@ -103,7 +105,7 @@ type locationMatchers map[locationMatcher]string
 func (lms locationMatchers) String() string {
 	out := []string{}
 	for matcher, location := range lms {
-		out = append(out, matcher.Model+","+matcher.Channel+","+location)
+		out = append(out, matcher.Model+","+matcher.Matcher+","+location)
 	}
 	return strings.Join(out, ";")
 }
@@ -113,7 +115,7 @@ func (lms locationMatchers) Set(m string) error {
 	if len(f) != 3 {
 		return fmt.Errorf("want flag with 3 comma-separated fields, got %v", m)
 	}
-	lms[locationMatcher{Model: f[0], Channel: f[1]}] = f[2]
+	lms[locationMatcher{Model: f[0], Matcher: f[1]}] = f[2]
 	return nil
 }
 
@@ -160,7 +162,10 @@ func run(r io.Reader) error {
 			log.Fatal(err)
 		}
 
-		location := matchers[locationMatcher{Model: msg.Model, Channel: channel}]
+		location := idMatchers[locationMatcher{Model: msg.Model, Matcher: id}]
+		if location == "" {
+			location = channelMatchers[locationMatcher{Model: msg.Model, Matcher: channel}]
+		}
 
 		labels := []string{msg.Model, id, channel, location}
 		packetsReceived.WithLabelValues(labels...).Inc()
@@ -188,15 +193,20 @@ func run(r io.Reader) error {
 }
 
 func main() {
-	flag.Var(&matchers, "location_matchers", "Acurite Tower Sensor,1,Bedroom;...")
+	flag.Var(&channelMatchers, "channel_matcher", "Acurite Tower Sensor,1,Bedroom")
+	flag.Var(&idMatchers, "id_matcher", "LocationAcurite Tower Sensor,12345,Bedroom")
 	flag.Parse()
-	log.Print("Flag config: " + matchers.String())
+	log.Print("channelMatchers: " + channelMatchers.String())
+	log.Print("idMatchers: " + idMatchers.String())
 	prometheus.MustRegister(packetsReceived, temperature, humidity, timestamp, battery)
 
 	go func() {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			index.Execute(w, matchers)
+			index.Execute(w, map[string]string{
+				"channelMatchers": channelMatchers.String(),
+				"idMatchers":      idMatchers.String(),
+			})
 		})
 		http.Handle("/metrics", prometheus.Handler())
 		if err := http.ListenAndServe(*addr, nil); err != nil {
