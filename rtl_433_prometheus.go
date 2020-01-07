@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -77,7 +76,8 @@ type Message struct {
 	// Sensor Model
 	Model string `json:"model"`
 	// Sensor ID. May be random per-boot, or saved into device memory.
-	ID int `json:"id"`
+	// Either an int or string
+	RawID interface{} `json:"id"`
 	// Channel sensor is transmitting on. Typically 1-3, controlled by a switch on the device
 	// Either an int or string
 	RawChannel interface{} `json:"channel"`
@@ -130,6 +130,17 @@ func (m *Message) Channel() (string, error) {
 	return "", fmt.Errorf("Could not parse JSON, bad channel (expected float or string), got: %v", m.RawChannel)
 }
 
+// ID canonicalizes the int|string ID to a string
+func (m *Message) ID() (string, error) {
+	if s, ok := m.RawID.(string); ok {
+		return s, nil
+	}
+	if f, ok := m.RawID.(float64); ok {
+		return fmt.Sprintf("%d", int(f)), nil
+	}
+	return "", fmt.Errorf("Could not parse JSON, bad ID (expected float or string), got: %v", m.RawID)
+}
+
 func run(r io.Reader) error {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
@@ -144,9 +155,14 @@ func run(r io.Reader) error {
 			log.Fatal(err)
 		}
 
+		id, err := msg.ID()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		location := matchers[locationMatcher{Model: msg.Model, Channel: channel}]
 
-		labels := []string{msg.Model, strconv.Itoa(msg.ID), channel, location}
+		labels := []string{msg.Model, id, channel, location}
 		packetsReceived.WithLabelValues(labels...).Inc()
 		timestamp.WithLabelValues(labels...).SetToCurrentTime()
 		if temperature != nil {
