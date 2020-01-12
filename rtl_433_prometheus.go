@@ -26,7 +26,7 @@ var (
 	 <pre>{{.}}</pre>
 	 `))
 
-	addr            = flag.String("listen", ":9001", "Address to listen on")
+	addr            = flag.String("listen", ":9550", "Address to listen on")
 	subprocess      = flag.String("subprocess", "rtl_433 -F json", "What command to run to get rtl_433 radio packets")
 	channelMatchers = make(locationMatchers)
 	idMatchers      = make(locationMatchers)

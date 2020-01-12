@@ -29,7 +29,7 @@ WORKDIR /
 COPY --from=gobuilder /root/rtl_433_prometheus /
 COPY --from=cbuilder /usr/local/bin/rtl_433 /
 RUN chmod +x /rtl_433
-EXPOSE 9001
+EXPOSE 9550
 ENTRYPOINT ["/rtl_433_prometheus"]
 CMD ["--subprocess", "/rtl_433 -F json -M newmodel"]
 
