@@ -35,3 +35,10 @@ services:
       "--id_matcher", "Acurite tower sensor,4321,Balcony",
     ]
 ```
+
+Example prometheus.yml:
+
+    scrape_configs:
+      - job_name: 'rtl_433_prometheus'
+          static_configs:
+                - targets: ['hostname:9550']
