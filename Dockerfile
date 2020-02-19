@@ -1,4 +1,4 @@
-# Must be built on an ARM device, else you'll get invalid architecture.
+# May be built from x86_64, using cross-build-start magic.
 
 # Use the official Golang image to create a build artifact.
 # This is based on Debian and sets the GOPATH to /go.
