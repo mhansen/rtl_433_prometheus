@@ -3,7 +3,7 @@
 # Use the official Golang image to create a build artifact.
 # This is based on Debian and sets the GOPATH to /go.
 # https://hub.docker.com/_/golang
-FROM golang:1.13 as builder
+FROM golang:1.13 as gobuilder
 
 # Create and change to the app directory.
 WORKDIR /app
@@ -31,7 +31,7 @@ RUN git clone https://github.com/mhansen/rtl_433.git && \
     mkdir build && \
     cd build && \
     cmake ../ && \
-    make -j4 && \
+    make -j4 rtl_433 && \
     make install && \
     cd / && \
     rm -rf /tmp
