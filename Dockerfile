@@ -31,7 +31,7 @@ RUN git clone https://github.com/mhansen/rtl_433.git && \
     mkdir build && \
     cd build && \
     cmake ../ && \
-    make && \
+    make -j 4 && \
     make install && \
     cd / && \
     rm -rf /tmp
