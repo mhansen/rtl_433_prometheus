@@ -1,12 +1,21 @@
-FROM golang:alpine as gobuilder
+# Use the official Golang image to create a build artifact.
+# This is based on Debian and sets the GOPATH to /go.
+# https://hub.docker.com/_/golang
+FROM golang:1.13 as builder
 
-RUN apk update && apk add git && apk add ca-certificates
+# Create and change to the app directory.
+WORKDIR /app
 
-WORKDIR /root
-RUN mkdir /root/app
-COPY go.mod go.sum *.go /root/
-RUN go get -d -v
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -a rtl_433_prometheus.go
+# Retrieve application dependencies.
+# This allows the container build to reuse cached dependencies.
+COPY go.* ./
+RUN go mod download
+
+# Copy local code to the container image.
+COPY . ./
+
+# Build the binary.
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -mod=readonly -a -v rtl_433_prometheus.go
 
 # I'd like to use arm32v6 for RPi Zero W but that doesn't exist on Docker Hub. v5 is good enough.
 FROM arm32v5/debian:latest as cbuilder
