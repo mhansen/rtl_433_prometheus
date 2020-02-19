@@ -19,8 +19,11 @@ COPY . ./
 # Build the binary.
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -mod=readonly -a -v rtl_433_prometheus.go
 
-# I'd like to use arm32v6 for RPi Zero W but that doesn't exist on Docker Hub. v5 is good enough.
-FROM arm32v5/debian:latest as cbuilder
+FROM balenalib/raspberrypi3:build as cbuilder
+
+# https://www.balena.io/docs/reference/base-images/base-images/#building-arm-containers-on-x86-machines
+RUN [ "cross-build-start" ]
+
 RUN apt-get update && apt-get install -y git libusb-1.0.0-dev librtlsdr-dev rtl-sdr cmake automake
 WORKDIR /tmp/
 RUN git clone https://github.com/mhansen/rtl_433.git && \
@@ -33,13 +36,24 @@ RUN git clone https://github.com/mhansen/rtl_433.git && \
     cd / && \
     rm -rf /tmp
 
-# I'd like to use arm32v6 for RPi Zero W but that doesn't exist on Docker Hub. v5 is good enough.
-FROM arm32v5/debian:latest
+# https://www.balena.io/docs/reference/base-images/base-images/#building-arm-containers-on-x86-machines
+RUN [ "cross-build-end" ]
+
+FROM balenalib/raspberrypi3:run
+
+# https://www.balena.io/docs/reference/base-images/base-images/#building-arm-containers-on-x86-machines
+RUN [ "cross-build-start" ]
+
 RUN apt-get update && apt-get install -y librtlsdr0
+
 WORKDIR /
 COPY --from=gobuilder /root/rtl_433_prometheus /
 COPY --from=cbuilder /usr/local/bin/rtl_433 /
 RUN chmod +x /rtl_433
+
+# https://www.balena.io/docs/reference/base-images/base-images/#building-arm-containers-on-x86-machines
+RUN [ "cross-build-end" ]
+
 EXPOSE 9550
 ENTRYPOINT ["/rtl_433_prometheus"]
 CMD ["--subprocess", "/rtl_433 -F json -M newmodel"]
