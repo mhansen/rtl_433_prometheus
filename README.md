@@ -1,4 +1,4 @@
-A Prometheus exporter for radio messages received from rtl_433.
+A Prometheus exporter for radio messages received from [rtl_433](https://github.com/merbanan/rtl_433).
 
 Hosted on Docker Hub: https://hub.docker.com/r/markhnsn/rtl_433_prometheus
 
