@@ -4,18 +4,22 @@ Hosted on Docker Hub: https://hub.docker.com/r/markhnsn/rtl_433_prometheus
 
 You can configure locations using the name+channel like this:
 
-     ./rtl_433_prometheus --channel_matcher=Acurite-Tower,1,Bedroom --channel_matcher=Acurite-Tower,2,Downstairs
+```shell
+$ ./rtl_433_prometheus --channel_matcher=Acurite-Tower,1,Bedroom --channel_matcher=Acurite-Tower,2,Downstairs
+```
 
 And using name+ID like this:
 
-     ./rtl_433_prometheus --id_matcher=Acurite-Tower,12345,Bedroom --id_matcher=Acurite-Tower,23456,Downstairs
-
-You can also combine.
-
-
-Example docker-compose.yml config:
-
+```shell
+$ ./rtl_433_prometheus --id_matcher=Acurite-Tower,12345,Bedroom --id_matcher=Acurite-Tower,23456,Downstairs
 ```
+
+You can also combine `--id_matcher` with `--channel_matcher`.
+
+
+Example `docker-compose.yml` config:
+
+```yml
 version: '3.4'
 services:
   rtl_433_prometheus:
@@ -36,9 +40,11 @@ services:
     ]
 ```
 
-Example prometheus.yml:
+Example `prometheus.yml`:
 
-    scrape_configs:
-      - job_name: 'rtl_433_prometheus'
-          static_configs:
-                - targets: ['hostname:9550']
+```yml
+scrape_configs:
+  - job_name: 'rtl_433_prometheus'
+      static_configs:
+            - targets: ['hostname:9550']
+```
