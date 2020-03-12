@@ -19,12 +19,36 @@ import (
 var (
 	index = template.Must(template.New("index").Parse(
 		`<!doctype html>
-	 <title>RTL_433 Prometheus Exporter</title>
-	 <h1>RTL_433 Prometheus Exporter</h1>
-	 <a href="/metrics">Metrics</a>
-	 <p>
-	 <pre>{{.}}</pre>
-	 `))
+<title>RTL_433 Prometheus Exporter</title>
+<h1>RTL_433 Prometheus Exporter</h1>
+<a href="/metrics">Metrics</a>
+<p>
+Matchers:
+<table border=1>
+	<tr>
+		<th>Model
+		<th>ID
+		<th>Channel
+		<th>Location
+	</tr>
+{{range $key, $value := .idMatchers}}
+	<tr>
+		<td>{{$key.Model}}
+		<td>{{$key.Matcher}}
+		<td>*
+		<td>{{$value}}</li>
+	</tr>
+{{end}}
+{{range $key, $value := .channelMatchers}}
+	<tr>
+		<td>{{$key.Model}}
+		<td>*
+		<td>{{$key.Matcher}}
+		<td>{{$value}}</li>
+	</tr>
+{{end}}
+</table>
+</p>`))
 
 	addr            = flag.String("listen", ":9550", "Address to listen on")
 	subprocess      = flag.String("subprocess", "rtl_433 -F json", "What command to run to get rtl_433 radio packets")
@@ -203,10 +227,13 @@ func main() {
 	go func() {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			index.Execute(w, map[string]string{
-				"channelMatchers": channelMatchers.String(),
-				"idMatchers":      idMatchers.String(),
+			err := index.Execute(w, map[string]interface{}{
+				"channelMatchers": channelMatchers,
+				"idMatchers":      idMatchers,
 			})
+			if err != nil {
+				log.Println(err)
+			}
 		})
 		http.Handle("/metrics", prometheus.Handler())
 		if err := http.ListenAndServe(*addr, nil); err != nil {
