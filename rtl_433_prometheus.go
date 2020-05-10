@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -235,7 +236,7 @@ func main() {
 				log.Println(err)
 			}
 		})
-		http.Handle("/metrics", prometheus.Handler())
+		http.Handle("/metrics", promhttp.Handler())
 		if err := http.ListenAndServe(*addr, nil); err != nil {
 			log.Fatal(err)
 		}
