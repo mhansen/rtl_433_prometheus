@@ -195,7 +195,7 @@ func run(r io.Reader) error {
 		labels := []string{msg.Model, id, channel, location}
 		packetsReceived.WithLabelValues(labels...).Inc()
 		timestamp.WithLabelValues(labels...).SetToCurrentTime()
-		if temperature != nil {
+		if msg.Temperature != nil {
 			temperature.WithLabelValues(labels...).Set(*msg.Temperature)
 		}
 		if msg.Humidity != nil {
