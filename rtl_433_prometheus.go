@@ -117,6 +117,12 @@ type Message struct {
 	Temperature *float64 `json:"temperature_C"`
 	// Humidity (0-100). Nil if not present in initial JSON.
 	Humidity *int32 `json:"humidity"`
+	// Power on channel 0 (Watts)
+	Power0W *int32 `json:"power0_W"`
+	// Power on channel 0 (Watts)
+	Power1W *int32 `json:"power1_W"`
+	// Power on channel 0 (Watts)
+	Power2W *int32 `json:"power2_W"`
 }
 
 type locationMatcher struct {
