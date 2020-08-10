@@ -58,6 +58,13 @@ Matchers:
 
 	labels = []string{"model", "id", "channel", "location"}
 
+	watts = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "rtl_433_power_watts",
+			Help: "Instantaneous power in watts.",
+		},
+		[]string{"model", "id", "channel", "location"},
+	)
 	packetsReceived = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "rtl_433_packets_received",
@@ -204,11 +211,11 @@ func run(r io.Reader) error {
 		labels := []string{msg.Model, id, channel, location}
 		packetsReceived.WithLabelValues(labels...).Inc()
 		timestamp.WithLabelValues(labels...).SetToCurrentTime()
-		if msg.Temperature != nil {
-			temperature.WithLabelValues(labels...).Set(*msg.Temperature)
+		if t := msg.Temperature; t != nil {
+			temperature.WithLabelValues(labels...).Set(*t)
 		}
-		if msg.Humidity != nil {
-			humidity.WithLabelValues(labels...).Set(float64(*msg.Humidity) / 100)
+		if h := msg.Humidity; h != nil {
+			humidity.WithLabelValues(labels...).Set(float64(*h) / 100)
 		}
 		if msg.Battery != "" {
 			switch {
@@ -217,10 +224,19 @@ func run(r io.Reader) error {
 			case strings.EqualFold(msg.Battery, "LOW"):
 				battery.WithLabelValues(labels...).Set(0)
 			}
-		} else if msg.BatteryOK != nil {
-			battery.WithLabelValues(labels...).Set(float64(*msg.BatteryOK))
-		} else if msg.BatteryLow != nil {
-			battery.WithLabelValues(labels...).Set(float64(1 - *msg.BatteryLow))
+		} else if b := msg.BatteryOK; b != nil {
+			battery.WithLabelValues(labels...).Set(float64(*b))
+		} else if b := msg.BatteryLow; b != nil {
+			battery.WithLabelValues(labels...).Set(float64(1 - *b))
+		}
+		if p := msg.Power0W; p != nil {
+			watts.WithLabelValues(msg.Model, id, "0", location).Set(float64(*p))
+		}
+		if p := msg.Power1W; p != nil {
+			watts.WithLabelValues(msg.Model, id, "1", location).Set(float64(*p))
+		}
+		if p := msg.Power2W; p != nil {
+			watts.WithLabelValues(msg.Model, id, "2", location).Set(float64(*p))
 		}
 	}
 	return scanner.Err()
@@ -232,7 +248,7 @@ func main() {
 	flag.Parse()
 	log.Print("channelMatchers: " + channelMatchers.String())
 	log.Print("idMatchers: " + idMatchers.String())
-	prometheus.MustRegister(packetsReceived, temperature, humidity, timestamp, battery)
+	prometheus.MustRegister(packetsReceived, temperature, humidity, timestamp, battery, watts)
 
 	go func() {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
