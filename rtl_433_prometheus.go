@@ -148,6 +148,9 @@ func (lms locationMatchers) Set(m string) error {
 // Some sensors output numbered channels, some output string channels.
 // We have to handle both.
 func (m *Message) Channel() (string, error) {
+	if m.RawChannel == nil {
+		return "", nil
+	}
 	if s, ok := m.RawChannel.(string); ok {
 		return s, nil
 	}
