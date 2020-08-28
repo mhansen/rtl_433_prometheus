@@ -47,6 +47,7 @@ func TestParsingToMetrics(t *testing.T) {
 	wantTemperature := `
 		# HELP rtl_433_temperature_celsius Temperature in Celsius
 		# TYPE rtl_433_temperature_celsius gauge
+ 		rtl_433_temperature_celsius{channel="1",id="77",location="",model="AmbientWeather-TX8300"} 16.5
 		rtl_433_temperature_celsius{channel="1",id="94",location="",model="Nexus-TH"} 22.6
 		rtl_433_temperature_celsius{channel="2",id="184",location="",model="Nexus-TH"} 21.7
 		rtl_433_temperature_celsius{channel="3",id="55",location="",model="Ecowitt-WH53"} 18
@@ -60,6 +61,7 @@ func TestParsingToMetrics(t *testing.T) {
 	wantHumidity := `
 		# HELP rtl_433_humidity Relative Humidity (0-1.0)
 		# TYPE rtl_433_humidity gauge
+		rtl_433_humidity{channel="1",id="77",location="",model="AmbientWeather-TX8300"} 0.66
 		rtl_433_humidity{channel="1",id="94",location="",model="Nexus-TH"} 0.53
 		rtl_433_humidity{channel="2",id="184",location="",model="Nexus-TH"} 0.55
 		rtl_433_humidity{channel="A",id="7997",location="",model="Acurite-Tower"} 0.91
@@ -71,6 +73,7 @@ func TestParsingToMetrics(t *testing.T) {
 	wantPacketsReceived := `
 		# HELP rtl_433_packets_received Packets (temperature messages) received.
 		# TYPE rtl_433_packets_received counter
+		rtl_433_packets_received{channel="1",id="77",location="",model="AmbientWeather-TX8300"} 1
 		rtl_433_packets_received{channel="1",id="94",location="",model="Nexus-TH"} 1
 		rtl_433_packets_received{channel="2",id="184",location="",model="Nexus-TH"} 1
 		rtl_433_packets_received{channel="3",id="55",location="",model="Ecowitt-WH53"} 1

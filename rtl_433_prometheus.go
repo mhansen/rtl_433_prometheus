@@ -115,7 +115,7 @@ type Message struct {
 	// Either an int or string
 	RawChannel interface{} `json:"channel"`
 	// Battery status, typically "LOW" or "OK" or "", case-insensitive.
-	Battery string `json:"battery"`
+	RawBattery interface{} `json:"battery"`
 	// Alternative battery key. 1 or 0 or nil (not present)
 	BatteryOK *int `json:"battery_ok"`
 	// Yet another alternative battery key. 1 for low battery, 0 for high battery, nil (not present)
@@ -184,6 +184,17 @@ func (m *Message) ID() (string, error) {
 	return "", fmt.Errorf("Could not parse JSON, bad ID (expected float or string), got: %v", m.RawID)
 }
 
+// Battery returns a string representation of the RawBattery field, since it can be both int or string.
+func (m *Message) Battery() (string, error) {
+	if s, ok := m.RawBattery.(string); ok {
+		return s, nil
+	}
+	if i, ok := m.RawBattery.(int); ok {
+		return fmt.Sprintf("%d", i), nil
+	}
+	return "", fmt.Errorf("Could not parse JSON, bad Battery (expected int or string), got: %v", m.RawBattery)
+}
+
 func run(r io.Reader) error {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
@@ -217,12 +228,14 @@ func run(r io.Reader) error {
 		if h := msg.Humidity; h != nil {
 			humidity.WithLabelValues(labels...).Set(float64(*h) / 100)
 		}
-		if msg.Battery != "" {
+		if b, err := msg.Battery(); err == nil && b != "" {
 			switch {
-			case strings.EqualFold(msg.Battery, "OK"):
+			case strings.EqualFold(b, "OK"):
 				battery.WithLabelValues(labels...).Set(1)
-			case strings.EqualFold(msg.Battery, "LOW"):
+			case strings.EqualFold(b, "LOW"):
 				battery.WithLabelValues(labels...).Set(0)
+			// TODO: handle integer values, eg.
+			// https://github.com/merbanan/rtl_433/blob/4871ca0/src/devices/ambientweather_tx8300.c#L112
 			}
 		} else if b := msg.BatteryOK; b != nil {
 			battery.WithLabelValues(labels...).Set(float64(*b))
