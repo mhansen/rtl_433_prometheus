@@ -201,17 +201,17 @@ func run(r io.Reader) error {
 		msg := Message{}
 		line := scanner.Bytes()
 		if err := json.Unmarshal(line, &msg); err != nil {
-			log.Fatal(err)
+			log.Printf("Could not parse line of JSON %q, dropping: %v", line, err)
 		}
 
 		channel, err := msg.Channel()
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Got message %v without a Channel, dropping: %v", msg, err)
 		}
 
 		id, err := msg.ID()
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Got message %v without an ID, dropping: %v", msg, err)
 		}
 
 		location := idMatchers[locationMatcher{Model: msg.Model, Matcher: id}]
