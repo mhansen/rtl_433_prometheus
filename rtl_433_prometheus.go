@@ -202,16 +202,19 @@ func run(r io.Reader) error {
 		line := scanner.Bytes()
 		if err := json.Unmarshal(line, &msg); err != nil {
 			log.Printf("Could not parse line of JSON %q, dropping: %v", line, err)
+			continue
 		}
 
 		channel, err := msg.Channel()
 		if err != nil {
 			log.Printf("Got message %v without a Channel, dropping: %v", msg, err)
+			continue
 		}
 
 		id, err := msg.ID()
 		if err != nil {
 			log.Printf("Got message %v without an ID, dropping: %v", msg, err)
+			continue
 		}
 
 		location := idMatchers[locationMatcher{Model: msg.Model, Matcher: id}]
@@ -234,8 +237,8 @@ func run(r io.Reader) error {
 				battery.WithLabelValues(labels...).Set(1)
 			case strings.EqualFold(b, "LOW"):
 				battery.WithLabelValues(labels...).Set(0)
-			// TODO: handle integer values, eg.
-			// https://github.com/merbanan/rtl_433/blob/4871ca0/src/devices/ambientweather_tx8300.c#L112
+				// TODO: handle integer values, eg.
+				// https://github.com/merbanan/rtl_433/blob/4871ca0/src/devices/ambientweather_tx8300.c#L112
 			}
 		} else if b := msg.BatteryOK; b != nil {
 			battery.WithLabelValues(labels...).Set(float64(*b))
