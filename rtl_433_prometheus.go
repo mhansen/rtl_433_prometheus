@@ -274,6 +274,8 @@ func main() {
 	log.Print("channelMatchers: " + channelMatchers.String())
 	log.Print("idMatchers: " + idMatchers.String())
 	prometheus.MustRegister(packetsReceived, temperature, humidity, timestamp, battery, watts)
+	// Add Go module build info.
+	prometheus.MustRegister(prometheus.NewBuildInfoCollector())
 
 	go func() {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
