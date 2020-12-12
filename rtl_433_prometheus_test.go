@@ -50,6 +50,7 @@ func TestParsingToMetrics(t *testing.T) {
  		rtl_433_temperature_celsius{channel="1",id="77",location="",model="AmbientWeather-TX8300"} 16.5
 		rtl_433_temperature_celsius{channel="1",id="94",location="",model="Nexus-TH"} 22.6
 		rtl_433_temperature_celsius{channel="2",id="184",location="",model="Nexus-TH"} 21.7
+		rtl_433_temperature_celsius{channel="2",id="59",location="",model="Ambientweather-F007TH"} 33.166666666666664
 		rtl_433_temperature_celsius{channel="3",id="55",location="",model="Ecowitt-WH53"} 18
 		rtl_433_temperature_celsius{channel="A",id="7997",location="",model="Acurite-Tower"} 12.6
 	`
@@ -64,6 +65,7 @@ func TestParsingToMetrics(t *testing.T) {
 		rtl_433_humidity{channel="1",id="77",location="",model="AmbientWeather-TX8300"} 0.66
 		rtl_433_humidity{channel="1",id="94",location="",model="Nexus-TH"} 0.53
 		rtl_433_humidity{channel="2",id="184",location="",model="Nexus-TH"} 0.55
+		rtl_433_humidity{channel="2",id="59",location="",model="Ambientweather-F007TH"} 0.35
 		rtl_433_humidity{channel="A",id="7997",location="",model="Acurite-Tower"} 0.91
 	`
 	if err := testutil.CollectAndCompare(humidity, strings.NewReader(wantHumidity), "rtl_433_humidity"); err != nil {
@@ -76,6 +78,7 @@ func TestParsingToMetrics(t *testing.T) {
 		rtl_433_packets_received{channel="1",id="77",location="",model="AmbientWeather-TX8300"} 1
 		rtl_433_packets_received{channel="1",id="94",location="",model="Nexus-TH"} 1
 		rtl_433_packets_received{channel="2",id="184",location="",model="Nexus-TH"} 1
+		rtl_433_packets_received{channel="2",id="59",location="",model="Ambientweather-F007TH"} 1
 		rtl_433_packets_received{channel="3",id="55",location="",model="Ecowitt-WH53"} 1
 		rtl_433_packets_received{channel="A",id="7997",location="",model="Acurite-Tower"} 1
 	`
@@ -87,6 +90,7 @@ func TestParsingToMetrics(t *testing.T) {
 		# TYPE rtl_433_battery gauge
 		rtl_433_battery{channel="1",id="94",location="",model="Nexus-TH"} 1
 		rtl_433_battery{channel="2",id="184",location="",model="Nexus-TH"} 1
+		rtl_433_battery{channel="2",id="59",location="",model="Ambientweather-F007TH"} 1
 		rtl_433_battery{channel="A",id="7997",location="",model="Acurite-Tower"} 0
 	`
 	if err := testutil.CollectAndCompare(battery, strings.NewReader(wantBattery), "rtl_433_battery"); err != nil {

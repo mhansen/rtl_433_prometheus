@@ -121,7 +121,9 @@ type Message struct {
 	// Yet another alternative battery key. 1 for low battery, 0 for high battery, nil (not present)
 	BatteryLow *int `json:"battery_low"`
 	// Temperature in Celsius. Nil if not present in initial JSON.
-	Temperature *float64 `json:"temperature_C"`
+	TemperatureC *float64 `json:"temperature_C"`
+	// Temperature in Fahrenheit. Nil if not present in initial JSON.
+	TemperatureF *float64 `json:"temperature_F"`
 	// Humidity (0-100). Nil if not present in initial JSON.
 	Humidity *int32 `json:"humidity"`
 	// Power on channel 0 (Watts)
@@ -195,6 +197,11 @@ func (m *Message) Battery() (string, error) {
 	return "", fmt.Errorf("Could not parse JSON, bad Battery (expected int or string), got: %v", m.RawBattery)
 }
 
+// Fahrenheit to Celsius
+func fToC(f float64) float64 {
+	return (f - 32) * 5 / 9
+}
+
 func run(r io.Reader) error {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
@@ -225,8 +232,10 @@ func run(r io.Reader) error {
 		labels := []string{msg.Model, id, channel, location}
 		packetsReceived.WithLabelValues(labels...).Inc()
 		timestamp.WithLabelValues(labels...).SetToCurrentTime()
-		if t := msg.Temperature; t != nil {
+		if t := msg.TemperatureC; t != nil {
 			temperature.WithLabelValues(labels...).Set(*t)
+		} else if t := msg.TemperatureF; t != nil {
+			temperature.WithLabelValues(labels...).Set(fToC(*t))
 		}
 		if h := msg.Humidity; h != nil {
 			humidity.WithLabelValues(labels...).Set(float64(*h) / 100)

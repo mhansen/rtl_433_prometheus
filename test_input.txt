@@ -6,3 +6,4 @@
 {"time" : "2019-06-16 07:18:51", "model" : "Ecowitt-WH53", "id" : {}, "channel" : 3, "temperature_C" : 18.000}
 {badjson should be ignored}
 {"time" : "2020-08-28 23:55:58", "model" : "AmbientWeather-TX8300", "id" : 77, "channel" : 1, "battery" : 2, "temperature_C" : 16.500, "humidity" : 66, "mic" : "CHECKSUM"}
+{"time" : "2020-12-12 13:42:24", "model" : "Ambientweather-F007TH", "id" : 59, "channel" : 2, "battery_ok" : 1, "temperature_F" : 91.700, "humidity" : 35, "mic" : "CRC"}
