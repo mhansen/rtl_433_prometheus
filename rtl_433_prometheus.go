@@ -143,7 +143,7 @@ type locationMatcher struct {
 type locationMatchers map[locationMatcher]string
 
 func (lms locationMatchers) String() string {
-	out := []string{}
+	var out []string
 	for matcher, location := range lms {
 		out = append(out, matcher.Model+","+matcher.Matcher+","+location)
 	}
@@ -172,10 +172,10 @@ func (m *Message) Channel() (string, error) {
 	if f, ok := m.RawChannel.(float64); ok {
 		return fmt.Sprintf("%d", int(f)), nil
 	}
-	return "", fmt.Errorf("Could not parse JSON, bad channel (expected float or string), got: %v", m.RawChannel)
+	return "", fmt.Errorf("could not parse JSON, bad channel (expected float or string), got: %v", m.RawChannel)
 }
 
-// ID canonicalizes the int|string ID to a string
+// ID converts the int|string ID to a string
 func (m *Message) ID() (string, error) {
 	if s, ok := m.RawID.(string); ok {
 		return s, nil
@@ -183,7 +183,7 @@ func (m *Message) ID() (string, error) {
 	if f, ok := m.RawID.(float64); ok {
 		return fmt.Sprintf("%d", int(f)), nil
 	}
-	return "", fmt.Errorf("Could not parse JSON, bad ID (expected float or string), got: %v", m.RawID)
+	return "", fmt.Errorf("could not parse JSON, bad ID (expected float or string), got: %v", m.RawID)
 }
 
 // Battery returns a string representation of the RawBattery field, since it can be both int or string.
@@ -194,7 +194,7 @@ func (m *Message) Battery() (string, error) {
 	if i, ok := m.RawBattery.(int); ok {
 		return fmt.Sprintf("%d", i), nil
 	}
-	return "", fmt.Errorf("Could not parse JSON, bad Battery (expected int or string), got: %v", m.RawBattery)
+	return "", fmt.Errorf("could not parse JSON, bad Battery (expected int or string), got: %v", m.RawBattery)
 }
 
 // Fahrenheit to Celsius
