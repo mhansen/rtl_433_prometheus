@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - v**  # Run when a tag is pushed starting with v
 
 jobs:
   docker:
