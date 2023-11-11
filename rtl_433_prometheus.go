@@ -100,6 +100,13 @@ Matchers:
 		},
 		labels,
 	)
+	depth = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "rtl_433_depth_cm",
+			Help: "Depth in cm",
+		},
+		labels,
+	)
 )
 
 // Message is a single sensor observation: a single line of JSON input from $ rtl_433 -F json
@@ -109,7 +116,7 @@ type Message struct {
 	// Sensor Model
 	Model string `json:"model"`
 	// Sensor ID. May be random per-boot, or saved into device memory.
-	// Either an int or string
+	// Either an int or strings
 	RawID interface{} `json:"id"`
 	// Channel sensor is transmitting on. Typically 1-3, controlled by a switch on the device
 	// Either an int or string
@@ -132,7 +139,9 @@ type Message struct {
 	Power1W *int32 `json:"power1_W"`
 	// Power on channel 0 (Watts)
 	Power2W *int32 `json:"power2_W"`
-}
+	// Depth in cm
+	Depth *int32 `json:"depth_cm"`
+}	
 
 type locationMatcher struct {
 	Model string
@@ -224,6 +233,7 @@ func run(r io.Reader) error {
 			continue
 		}
 
+
 		location := idMatchers[locationMatcher{Model: msg.Model, Matcher: id}]
 		if location == "" {
 			location = channelMatchers[locationMatcher{Model: msg.Model, Matcher: channel}]
@@ -239,6 +249,9 @@ func run(r io.Reader) error {
 		}
 		if h := msg.Humidity; h != nil {
 			humidity.WithLabelValues(labels...).Set(float64(*h) / 100)
+		}
+		if d := msg.Depth; d != nil {
+			depth.WithLabelValues(labels...).Set(float64(*d))
 		}
 		if b, err := msg.Battery(); err == nil && b != "" {
 			switch {
@@ -273,7 +286,7 @@ func main() {
 	flag.Parse()
 	log.Print("channelMatchers: " + channelMatchers.String())
 	log.Print("idMatchers: " + idMatchers.String())
-	prometheus.MustRegister(packetsReceived, temperature, humidity, timestamp, battery, watts)
+	prometheus.MustRegister(packetsReceived, temperature, humidity, timestamp, battery, watts, depth)
 	// Add Go module build info.
 	prometheus.MustRegister(prometheus.NewBuildInfoCollector())
 
