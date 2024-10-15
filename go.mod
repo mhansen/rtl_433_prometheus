@@ -2,7 +2,7 @@ module github.com/mhansen/rtl_433_prometheus
 
 go 1.20
 
-require github.com/prometheus/client_golang v1.20.4
+require github.com/prometheus/client_golang v1.20.5
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
